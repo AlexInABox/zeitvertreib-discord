@@ -1,0 +1,1 @@
+[![Docker Image CI](https://github.com/AlexInABox/zeitvertreib-discord/actions/workflows/docker-image.yml/badge.svg)](https://github.com/AlexInABox/zeitvertreib-discord/actions/workflows/docker-image.yml)
