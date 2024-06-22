@@ -1,8 +1,10 @@
-import { REST, Routes, Client, GatewayIntentBits, ApplicationCommandManager } from 'discord.js';
+import {Client, GatewayIntentBits, REST, Routes} from 'discord.js';
 import dotenv from 'dotenv';
-dotenv.config()
 import util from 'util';
 import request from 'request';
+
+dotenv.config()
+
 const requestPromise = util.promisify(request);
 
 const commands = [
@@ -28,12 +30,12 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const AUTHORIZED_USER_ID = process.env.AUTHORIZED_USER_ID;
 
-const rest = new REST({ version: '10' }).setToken(TOKEN);
+const rest = new REST({version: '10'}).setToken(TOKEN);
 
 try {
   console.log('Started refreshing application (/) commands.');
 
-  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+  await rest.put(Routes.applicationCommands(CLIENT_ID), {body: commands});
 
   console.log('Successfully reloaded application (/) commands.');
 } catch (error) {
@@ -41,12 +43,11 @@ try {
 }
 
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({intents: [GatewayIntentBits.Guilds]});
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
-
 
 
 const PANEL_APPLICATION_TOKEN = process.env.PANEL_APPLICATION_TOKEN;
@@ -68,9 +69,9 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     await interaction.reply('Reinstalling...');
-    try{
+    try {
       await reinstallServer(PANEL_BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATION_TOKEN)
-    } catch (e){
+    } catch (e) {
       await interaction.editReply('Error: ' + e);
     }
 
@@ -86,9 +87,9 @@ client.on('interactionCreate', async interaction => {
       if (!await isServerInstalling(PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)) {
         clearInterval(interval);
         await interaction.editReply('Starting server...');
-        try{
+        try {
           await sendPowerEventToServer("start", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
-        } catch (e){
+        } catch (e) {
           await interaction.editReply('Error: ' + e);
         }
         await interaction.editReply('Server has been successfully reinstalled!');
@@ -98,7 +99,6 @@ client.on('interactionCreate', async interaction => {
       if (elapsedTime >= maxDuration) {
         clearInterval(interval);
         await interaction.editReply('Reinstallation process did not complete within the expected time frame.');
-        return;
       }
     }, intervalDuration);
   }
@@ -109,9 +109,9 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     await interaction.reply('Starting server...');
-    try{
+    try {
       await sendPowerEventToServer("start", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
-    } catch (e){
+    } catch (e) {
       await interaction.editReply('Error: ' + e);
     }
 
@@ -124,9 +124,9 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     await interaction.reply('Starting server...');
-    try{
+    try {
       await sendPowerEventToServer("stop", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
-    } catch (e){
+    } catch (e) {
       await interaction.editReply('Error: ' + e);
     }
 
@@ -134,7 +134,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-async function sendPowerEventToServer(signal, BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN){
+async function sendPowerEventToServer(signal, BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN) {
   const options = {
     'method': 'POST',
     'url': `${BASE_URL}api/client/servers/${SERVER_CLIENT_ID}/power`,
@@ -148,12 +148,12 @@ async function sendPowerEventToServer(signal, BASE_URL, SERVER_CLIENT_ID, PANEL_
     }
   };
 
-  await request(options, function (error, response) {
+  await request(options, function (error) {
     if (error) throw new Error(error);
   });
 }
 
-async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATION_TOKEN){
+async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATION_TOKEN) {
   const options = {
     'method': 'POST',
     'url': `${BASE_URL}api/application/servers/${SERVER_APPLICATION_ID}/reinstall`,
@@ -164,12 +164,12 @@ async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATIO
     }
   };
 
-  await request(options, function (error, response) {
+  await request(options, function (error) {
     if (error) throw new Error(error);
   });
 }
 
-async function isServerInstalling(BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN){
+async function isServerInstalling(BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN) {
   const options = {
     'method': 'GET',
     'url': `${BASE_URL}api/client/servers/${SERVER_CLIENT_ID}/`,
