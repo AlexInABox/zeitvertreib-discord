@@ -1,4 +1,4 @@
-import {Client, GatewayIntentBits, REST, Routes} from 'discord.js';
+import {Client, EmbedBuilder as MessageEmbed, GatewayIntentBits, REST, Routes, ActivityType} from 'discord.js';
 import dotenv from 'dotenv';
 import util from 'util';
 import request from 'request';
@@ -24,29 +24,76 @@ const commands = [
     name: 'stop',
     description: 'Stop the SCP:SL server.',
   },
+  {
+    name: 'playercount',
+    description: 'Get the playercount of the SCP:SL server.',
+  },
+  {
+    name: 'playerlist',
+    description: 'Get a list of players on the SCP:SL server.',
+  }
 ];
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
 const AUTHORIZED_USER_ID = process.env.AUTHORIZED_USER_ID;
 
 const rest = new REST({version: '10'}).setToken(TOKEN);
 
 try {
-  console.log('Started refreshing application (/) commands.');
 
-  await rest.put(Routes.applicationCommands(CLIENT_ID), {body: commands});
+  //await deleteAllCommands();
+  await registerAllCommands();
 
-  console.log('Successfully reloaded application (/) commands.');
 } catch (error) {
   console.error(error);
+}
+
+async function deleteAllCommands(){
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] })
+    .then(() => console.log('Successfully deleted all guild commands.'))
+    .catch(console.error);
+
+  // for global commands
+  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] })
+    .then(() => console.log('Successfully deleted all application commands.'))
+    .catch(console.error);
+}
+
+async function registerAllCommands() {
+  console.log('Started refreshing application (/) commands.');
+
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {body: commands});
+
+  console.log('Successfully reloaded application (/) commands.');
 }
 
 
 const client = new Client({intents: [GatewayIntentBits.Guilds]});
 
-client.on('ready', () => {
+client.on('ready', async() => {
   console.log(`Logged in as ${client.user.tag}!`);
+
+  // Function to update bot activity with player count
+  async function updateActivity() {
+    let playerCount;
+    try {
+      playerCount= await getPlayerCount();
+    } catch (e){
+      playerCount = 0;
+    }
+    client.user.setActivity(`${playerCount} Spieler online.`, { type: ActivityType.Watching });
+    console.log("updated activity to " + playerCount);
+  }
+
+  // Update activity initially
+  await updateActivity();
+
+  // Set interval to update activity every 5 minutes (300000 milliseconds)
+  setInterval(async () => {
+    await updateActivity();
+  }, 10000); // Adjust interval as needed
 });
 
 
@@ -55,6 +102,8 @@ const PANEL_CLIENT_TOKEN = process.env.PANEL_CLIENT_TOKEN;
 const PANEL_BASE_URL = process.env.PANEL_BASE_URL;
 const SERVER_APPLICATION_ID = process.env.SERVER_APPLICATION_ID;
 const SERVER_CLIENT_ID = process.env.SERVER_CLIENT_ID;
+
+const CEDMOD_BASE_URL = process.env.CEDMOD_BASE_URL;
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
@@ -132,6 +181,56 @@ client.on('interactionCreate', async interaction => {
 
     await interaction.editReply(`Started server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
   }
+
+  if (interaction.commandName === 'playercount') {
+    await interaction.reply('Trying to fetch playercount. Please wait...');
+
+    try {
+      let playerCount = await getPlayerCount();
+      if (playerCount === 1) await interaction.editReply(playerCount + " player is online right now!");
+      else await interaction.editReply(playerCount + " players are online right now!");
+    } catch (e) {
+      await interaction.editReply('Error: ' + e);
+      console.log(e)
+    }
+  }
+
+  if (interaction.commandName === 'playerlist') {
+    await interaction.reply('Trying to fetch playlist. Please wait...');
+
+    try {
+      let players = await getPlayerList();
+
+      if (players.length === 0) {
+        const embed = new MessageEmbed()
+          .setTitle("Playerlist")
+          .setDescription("No players online right now. 😔")
+          .setColor("#9141ac")
+          .setFooter({
+            text: "SCP: Zeitvertreib",
+          })
+          .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+      } else {
+        let playerList = players.map(player => `- ${player}`).join('\n');
+
+        const embed = new MessageEmbed()
+          .setTitle("Playerlist")
+          .setDescription(playerList)
+          .setColor("#9141ac")
+          .setFooter({
+            text: "SCP: Zeitvertreib",
+          })
+          .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+      }
+    } catch (e) {
+      await interaction.editReply('Error: ' + e);
+      console.log(e)
+    }
+  }
 });
 
 async function sendPowerEventToServer(signal, BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN) {
@@ -188,6 +287,38 @@ async function isServerInstalling(BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN
     console.error(error);
     return false;
   }
+}
+
+async function getPlayerCount() {
+  let instanceId = process.env.CEDMOD_INSTANCE_ID;
+
+  const options = {
+    'method': 'OPTIONS',
+    'url': `https://queryws.cedmod.nl/Api/Realtime/QueryServers/GetPopulation?instanceId=${instanceId}`,
+    'headers': {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+
+  const response = await requestPromise(options);
+  return JSON.parse(response.body)[0].playerCount;
+}
+
+async function getPlayerList() {
+  let instanceId = process.env.CEDMOD_INSTANCE_ID;
+
+  const options = {
+    'method': 'OPTIONS',
+    'url': `https://queryws.cedmod.nl/Api/Realtime/QueryServers/GetPopulation?instanceId=${instanceId}`,
+    'headers': {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+
+  const response = await requestPromise(options);
+  return JSON.parse(response.body)[0].userIds;
 }
 
 function isUserAuthorized(userID) {
