@@ -93,7 +93,7 @@ client.on('ready', async () => {
   // Set interval to update activity every 5 minutes (300000 milliseconds)
   setInterval(async () => {
     await updateActivity();
-  }, 10000); // Adjust interval as needed
+  }, 15000); // Adjust interval as needed
 });
 
 
