@@ -1,4 +1,4 @@
-import {Client, EmbedBuilder as MessageEmbed, GatewayIntentBits, REST, Routes, ActivityType} from 'discord.js';
+import { Client, EmbedBuilder as MessageEmbed, GatewayIntentBits, REST, Routes, ActivityType } from 'discord.js';
 import dotenv from 'dotenv';
 import util from 'util';
 import request from 'request';
@@ -39,7 +39,7 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 const AUTHORIZED_USER_ID = process.env.AUTHORIZED_USER_ID;
 
-const rest = new REST({version: '10'}).setToken(TOKEN);
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 try {
 
@@ -50,7 +50,7 @@ try {
   console.error(error);
 }
 
-async function deleteAllCommands(){
+async function deleteAllCommands() {
   await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] })
     .then(() => console.log('Successfully deleted all guild commands.'))
     .catch(console.error);
@@ -64,23 +64,23 @@ async function deleteAllCommands(){
 async function registerAllCommands() {
   console.log('Started refreshing application (/) commands.');
 
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {body: commands});
+  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
 
   console.log('Successfully reloaded application (/) commands.');
 }
 
 
-const client = new Client({intents: [GatewayIntentBits.Guilds]});
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.on('ready', async() => {
+client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
   // Function to update bot activity with player count
   async function updateActivity() {
     let playerCount;
     try {
-      playerCount= await getPlayerCount();
-    } catch (e){
+      playerCount = await getPlayerCount();
+    } catch (e) {
       playerCount = 0;
     }
     client.user.setActivity(`${playerCount} Spieler online.`, { type: ActivityType.Watching });
