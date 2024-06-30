@@ -84,7 +84,9 @@ client.on('ready', async () => {
       playerCount = 0;
     }
     client.user.setActivity(`${playerCount} Spieler online.`, { type: ActivityType.Watching });
-    console.log("updated activity to " + playerCount);
+    // Set status to idle when there is no player playing; set to online if there are players online (Note: Discord takes time to update statuses!)
+    client.user.setStatus(playerCount == 0 ? "idle" : "online"); 
+    console.log("updated activity to " + playerCount + " (Status: " + client.user.presence.status + ")");
   }
 
   // Update activity initially
