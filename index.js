@@ -331,7 +331,7 @@ async function getPlayerCount() {
 
   const rawResponse = await requestPromise(options);
 
-  if (!rawResponse.body || rawResponse.body < 3)
+  if (!rawResponse.body || rawResponse.body.length < 3)
     return {
       success: false,
       errorMsg: "CedMod unavailable!"
@@ -347,8 +347,7 @@ async function getPlayerCount() {
       errorMsg: "Failed retrieving playerlist!"
     };
   }
-
-  if (!response || response.length < 1 || response[0]?.playerCount)
+  if (!response || !response[0])
     return {
       success: false,
       errorMsg: "Server unavailable!"
@@ -374,7 +373,7 @@ async function getPlayerList() {
 
   const rawResponse = await requestPromise(options);
 
-  if (!rawResponse.body || rawResponse.body < 3)
+  if (!rawResponse.body || rawResponse.body.length < 3)
     return {
       success: false,
       errorMsg: "CedMod did not respond with any data!"
@@ -391,7 +390,7 @@ async function getPlayerList() {
     };
   }
 
-  if (!response || response.length < 1 || response[0]?.userIds)
+  if (!response || !response[0])
     return {
       success: false,
       errorMsg: "The server is currently not available!"
