@@ -331,7 +331,7 @@ async function getPlayerCount() {
 
   const rawResponse = await requestPromise(options);
 
-  if (!rawResponse.body || rawResponse.body.length < 3)
+  if (!rawResponse.body || rawResponse.body.length < 2)
     return {
       success: false,
       errorMsg: "CedMod unavailable!"
@@ -373,7 +373,7 @@ async function getPlayerList() {
 
   const rawResponse = await requestPromise(options);
 
-  if (!rawResponse.body || rawResponse.body.length < 3)
+  if (!rawResponse.body || rawResponse.body.length < 2)
     return {
       success: false,
       errorMsg: "CedMod did not respond with any data!"
