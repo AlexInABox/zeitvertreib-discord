@@ -77,15 +77,18 @@ client.on('ready', async () => {
 
   // Function to update bot activity with player count
   async function updateActivity() {
-    let playerCount;
-    try {
-      playerCount = await getPlayerCount();
-    } catch (e) {
-      playerCount = 0;
+    let { playerCount, success, errorMsg } = await getPlayerCount();;
+
+    if (!success) {
+      client.user.setActivity(errorMsg, { type: ActivityType.Custom });
+      client.user.setStatus("dnd");
+      console.error("[ERR] Failed updating activity: " + errorMsg + " (Status: dnd)");
+      return;
     }
+
     client.user.setActivity(`${playerCount} Spieler online.`, { type: ActivityType.Watching });
     // Set status to idle when there is no player playing; set to online if there are players online (Note: Discord takes time to update statuses!)
-    client.user.setStatus(playerCount == 0 ? "idle" : "online"); 
+    client.user.setStatus(playerCount == 0 ? "idle" : "online");
     console.log("updated activity to " + playerCount + " (Status: " + client.user.presence.status + ")");
   }
 
@@ -188,7 +191,13 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply('Trying to fetch playercount. Please wait...');
 
     try {
-      let playerCount = await getPlayerCount();
+      let { playerCount, success, errorMsg } = await getPlayerCount();
+
+      if (!success) {
+        await interaction.editReply("Failed retrieving playercount: " + errorMsg);
+        return;
+      }
+
       if (playerCount === 1) await interaction.editReply(playerCount + " player is online right now!");
       else await interaction.editReply(playerCount + " players are online right now!");
     } catch (e) {
@@ -201,7 +210,24 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply('Trying to fetch playlist. Please wait...');
 
     try {
-      let players = await getPlayerList();
+      let { success, players, errorMsg } = await getPlayerList();
+
+      if (!success) {
+        console.error("[ERR] Caught error while running /playerlist: " + errorMsg);
+
+        const embed = new MessageEmbed()
+          .setTitle("Playerlist - Error")
+          .setDescription(errorMsg + "  😔")
+          .setColor("#9141ac")
+          .setFooter({
+            text: "SCP: Zeitvertreib",
+          })
+          .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+
+        return;
+      }
 
       if (players.length === 0) {
         const embed = new MessageEmbed()
@@ -303,8 +329,34 @@ async function getPlayerCount() {
     }
   };
 
-  const response = await requestPromise(options);
-  return JSON.parse(response.body)[0].playerCount;
+  const rawResponse = await requestPromise(options);
+
+  if (!rawResponse.body || rawResponse.body.length < 2)
+    return {
+      success: false,
+      errorMsg: "CedMod unavailable!"
+    };
+
+  let response;
+
+  try {
+    response = JSON.parse(rawResponse.body);
+  } catch (e) {
+    return {
+      success: false,
+      errorMsg: "Failed retrieving playerlist!"
+    };
+  }
+  if (!response || !response[0])
+    return {
+      success: false,
+      errorMsg: "Server unavailable!"
+    };
+
+  return {
+    success: true,
+    playerCount: response[0].playerCount,
+  };
 }
 
 async function getPlayerList() {
@@ -319,8 +371,35 @@ async function getPlayerList() {
     }
   };
 
-  const response = await requestPromise(options);
-  return JSON.parse(response.body)[0].userIds;
+  const rawResponse = await requestPromise(options);
+
+  if (!rawResponse.body || rawResponse.body.length < 2)
+    return {
+      success: false,
+      errorMsg: "CedMod did not respond with any data!"
+    };
+
+  let response;
+
+  try {
+    response = JSON.parse(rawResponse.body);
+  } catch (e) {
+    return {
+      success: false,
+      errorMsg: "CedMod did respond with invalid JSON!"
+    };
+  }
+
+  if (!response || !response[0])
+    return {
+      success: false,
+      errorMsg: "The server is currently not available!"
+    };
+
+  return {
+    success: true,
+    players: response[0].userIds,
+  };
 }
 
 function isUserAuthorized(userID) {
