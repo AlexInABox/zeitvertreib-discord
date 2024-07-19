@@ -263,20 +263,22 @@ client.on('interactionCreate', async interaction => {
 
 async function sendPowerEventToServer(signal, BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN) {
   const options = {
-    'method': 'POST',
-    'url': `${BASE_URL}api/client/servers/${SERVER_CLIENT_ID}/power`,
-    'headers': {
+    method: 'POST',
+    url: `${BASE_URL}api/client/servers/${SERVER_CLIENT_ID}/power`,
+    headers: {
       'Authorization': 'Bearer ' + PANEL_CLIENT_TOKEN,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
-    formData: {
+    form: {
       'signal': signal
-    }
+    },
+    jar: false // Disable cookie jar to prevent saving and sending cookies
   };
 
-  await request(options, function (error) {
+  request(options, function (error, response, body) {
     if (error) throw new Error(error);
+    console.log(body);
   });
 }
 
@@ -288,7 +290,8 @@ async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATIO
       'Authorization': 'Bearer ' + PANEL_APPLICATION_TOKEN,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
-    }
+    },
+    jar: false // Disable cookie jar to prevent saving and sending cookies
   };
 
   await request(options, function (error) {
@@ -304,7 +307,8 @@ async function isServerInstalling(BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN
       'Authorization': 'Bearer ' + PANEL_CLIENT_TOKEN,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
-    }
+    },
+    jar: false // Disable cookie jar to prevent saving and sending cookies
   };
 
   try {
