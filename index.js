@@ -289,9 +289,9 @@ async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATIO
     'headers': {
       'Authorization': 'Bearer ' + PANEL_APPLICATION_TOKEN,
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    jar: false // Disable cookie jar to prevent saving and sending cookies
+      'Accept': 'application/json',
+      'Cookie': null
+    }
   };
 
   await request(options, function (error) {
