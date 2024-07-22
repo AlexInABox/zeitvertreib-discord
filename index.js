@@ -290,7 +290,9 @@ async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATIO
       'Authorization': 'Bearer ' + PANEL_APPLICATION_TOKEN,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Cookie': null
+      'Cookie': null,
+      'Cache-Control': 'private, no-cache, no-store, must-revalidate, max-age=0',
+      'Pragma':'no-cache'
     }
   };
 
