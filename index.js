@@ -289,15 +289,13 @@ async function reinstallServer(BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATIO
     'headers': {
       'Authorization': 'Bearer ' + PANEL_APPLICATION_TOKEN,
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Cookie': null,
-      'Cache-Control': 'private, no-cache, no-store, must-revalidate, max-age=0',
-      'Pragma':'no-cache'
+      'Accept': 'application/json'
     }
   };
 
-  await request(options, function (error) {
+  await request(options, function (error, response) {
     if (error) throw new Error(error);
+    console.log(response);
   });
 }
 
