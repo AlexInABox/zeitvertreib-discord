@@ -37,7 +37,7 @@ const commands = [
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
-const AUTHORIZED_USER_ID = process.env.AUTHORIZED_USER_ID;
+const AUTHORIZED_USER_IDS = process.env.AUTHORIZED_USER_IDS;
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
@@ -407,7 +407,7 @@ async function getPlayerList() {
 }
 
 function isUserAuthorized(userID) {
-  return userID === AUTHORIZED_USER_ID;
+  return AUTHORIZED_USER_IDS.includes(userID);
 }
 
 client.login(TOKEN);
