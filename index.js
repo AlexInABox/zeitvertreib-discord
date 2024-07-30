@@ -17,16 +17,16 @@ const commands = [
     description: 'Reinstall the SCP:SL server.',
   },
   {
+    name: 'restart',
+    description: 'Restart the SCP:SL server.',
+  },
+  {
     name: 'start',
     description: 'Start the SCP:SL server.',
   },
   {
     name: 'stop',
     description: 'Stop the SCP:SL server.',
-  },
-  {
-    name: 'playercount',
-    description: 'Get the playercount of the SCP:SL server.',
   },
   {
     name: 'playerlist',
@@ -157,6 +157,21 @@ client.on('interactionCreate', async interaction => {
     }, intervalDuration);
   }
 
+  if (interaction.commandName === 'restart') {
+    if (!isUserAuthorized(interaction.user.id)) { //if not the owner
+      await interaction.reply('You do not have permission to use this command.');
+      return;
+    }
+    await interaction.reply('Restarting server...');
+    try {
+      await sendPowerEventToServer("restart", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
+    } catch (e) {
+      await interaction.editReply('Error: ' + e);
+    }
+
+    await interaction.editReply(`Restarted server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
+  }
+
   if (interaction.commandName === 'start') {
     if (!isUserAuthorized(interaction.user.id)) { //if not the owner
       await interaction.reply('You do not have permission to use this command.');
@@ -177,33 +192,14 @@ client.on('interactionCreate', async interaction => {
       await interaction.reply('You do not have permission to use this command.');
       return;
     }
-    await interaction.reply('Starting server...');
+    await interaction.reply('Stopping server...');
     try {
       await sendPowerEventToServer("stop", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
     } catch (e) {
       await interaction.editReply('Error: ' + e);
     }
 
-    await interaction.editReply(`Started server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
-  }
-
-  if (interaction.commandName === 'playercount') {
-    await interaction.reply('Trying to fetch playercount. Please wait...');
-
-    try {
-      let { playerCount, success, errorMsg } = await getPlayerCount();
-
-      if (!success) {
-        await interaction.editReply("Failed retrieving playercount: " + errorMsg);
-        return;
-      }
-
-      if (playerCount === 1) await interaction.editReply(playerCount + " player is online right now!");
-      else await interaction.editReply(playerCount + " players are online right now!");
-    } catch (e) {
-      await interaction.editReply('Error: ' + e);
-      console.log(e)
-    }
+    await interaction.editReply(`Stopped server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
   }
 
   if (interaction.commandName === 'playerlist') {
