@@ -8,7 +8,6 @@ dotenv.config()
 
 
 const AUTHORIZED_USER_IDS = process.env.AUTHORIZED_USER_IDS;
-const ENDPOINT_PORT = process.env.ENDPOINT_PORT;
 const ENDPOINT_URL = process.env.ENDPOINT_URL;
 const PANEL_APPLICATION_TOKEN = process.env.PANEL_APPLICATION_TOKEN;
 const PANEL_BASE_URL = process.env.PANEL_BASE_URL;
@@ -19,8 +18,8 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-let Players = [];
-let LastData = Date.now();
+let players = [];
+let lastData = Date.now();
 
 const setStatus = (status, text, activity = ActivityType.Watching) => {
   client.user.setActivity(text, { type: activity });
@@ -33,12 +32,12 @@ BotCommands.init(client);
 
 const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
-DataTransmitServer.openServer(ENDPOINT_PORT, ENDPOINT_URL);
+DataTransmitServer.openServer(80, ENDPOINT_URL);
 
-DataTransmitServer.registerPacketListener("*", (_) => LastData = Date.now())
+DataTransmitServer.registerPacketListener("*", (_) => lastData = Date.now())
 
 DataTransmitServer.registerPacketListener("Info", (packet) => {
-  Players = packet.Players;
+  players = packet.Players;
   const playerCount = packet.PlayerCount;
 
   if (playerCount > 0)
@@ -70,7 +69,7 @@ BotCommands.registerCommand("ping", async (interaction) => {
 
 BotCommands.registerCommand("playerlist", async (interaction) => {
 
-  if (Players.length === 0) {
+  if (players.length === 0) {
     const embed = new MessageEmbed()
       .setTitle("Playerlist")
       .setDescription("No players online right now. 😔")
@@ -82,10 +81,10 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
 
     await interaction.reply({ embeds: [embed] });
   } else {
-    let playerList = Players.map(player => `- ${player}`).join('\n');
+    let playerList = players.map(player => `- ${player}`).join('\n');
 
     const embed = new MessageEmbed()
-      .setTitle(`Playerlist (${Players.length})`)
+      .setTitle(`Playerlist (${players.length})`)
       .setDescription(playerList)
       .setColor("#9141ac")
       .setFooter({
