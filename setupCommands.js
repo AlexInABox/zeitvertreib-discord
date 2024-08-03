@@ -35,6 +35,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+if(!process.env.DISCORD_TOKEN) {
+  console.warn("Could not register discord commands since no token was found!");
+  process.exit(); 
+}
+
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
