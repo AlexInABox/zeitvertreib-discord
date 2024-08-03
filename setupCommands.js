@@ -37,7 +37,7 @@ dotenv.config();
 
 if(!process.env.DISCORD_TOKEN) {
   console.warn("Could not register discord commands since no token was found!");
-  return;  
+  process.exit(); 
 }
 
 const TOKEN = process.env.DISCORD_TOKEN;
