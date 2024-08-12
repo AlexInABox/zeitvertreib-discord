@@ -40,6 +40,12 @@ client.on('ready', async () => {
 
   setInterval(async () => {
     await readServerStats();
+    
+    if (serverStats.state == "offline") {
+      setStatus("dnd", "Server offline", ActivityType.Custom);
+      return;
+    }
+
     if (serverStats.timestamp + SCP_SERVER_TIMEOUT <= Date.now()) {
       setStatus("dnd", "Verbindung verloren :(", ActivityType.Custom);
       return;
@@ -51,7 +57,6 @@ client.on('ready', async () => {
     } else {
       setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
     }
-
   }, 5000) // every 5 seconds
 });
 ServerStatsManager.mainloop();
@@ -75,7 +80,17 @@ BotCommands.registerCommand("ping", async (interaction) => {
 BotCommands.registerCommand("playerlist", async (interaction) => {
 
 
-  if (serverStats.playerList.length == 0 && serverStats.playerCount > 0) { //Data from SCPListKr. all other sources failed
+  if (serverStats.state == "offline") {
+    const embed = new MessageEmbed()
+      .setTitle("SERVER OFFLINE " + generateDiscordTimestamp(serverStats.timestamp))
+      .setColor("#ff787f")
+      .setFooter({
+        text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
+      });
+
+    await interaction.reply({ embeds: [embed] });
+
+  } else if (serverStats.playerList.length == 0 && serverStats.playerCount > 0) { //Data from SCPListKr. all other sources failed
     const embed = new MessageEmbed()
       .setTitle(`${serverStats.playerCount} players are online! ` + generateDiscordTimestamp(serverStats.timestamp))
       .setDescription("Server list is unanvailable... 😔")
