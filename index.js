@@ -3,20 +3,16 @@ import { promises as fs } from 'fs';
 import dotenv from 'dotenv';
 import Pterodactyl from './lib/Pterodactyl.js';
 import BotCommands from './lib/BotCommands.js';
-import DataTransmitServer from "./lib/DataTransmitServer.js";
 import ServerStatsManager from './lib/ServerStatsManager.js';
 
 dotenv.config()
 
 
 const AUTHORIZED_USER_IDS = process.env.AUTHORIZED_USER_IDS;
-const CEDMOD_INSTANCE_ID = process.env.CEDMOD_INSTANCE_ID
-const ENDPOINT_URL = process.env.ENDPOINT_URL;
 const PANEL_APPLICATION_TOKEN = process.env.PANEL_APPLICATION_TOKEN;
 const PANEL_BASE_URL = process.env.PANEL_BASE_URL;
 const PANEL_CLIENT_TOKEN = process.env.PANEL_CLIENT_TOKEN;
 const SCP_SERVER_TIMEOUT = Number.parseInt(process.env.SCP_SERVER_TIMEOUT) | 300_000;
-const SCPLISTKR_INSTANCE_ID = process.env.SCPLISTKR_INSTANCE_ID
 const SERVER_APPLICATION_ID = process.env.SERVER_APPLICATION_ID;
 const SERVER_CLIENT_ID = process.env.SERVER_CLIENT_ID;
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -29,12 +25,6 @@ readServerStats();
 const setStatus = (status, text, activity = ActivityType.Watching) => {
   client.user.setActivity(text, { type: activity });
   client.user.setStatus(status);
-}
-
-const resetTimings = (fromServer = false) => {
-  lastData = Date.now();
-  if (fromServer)
-    lastDataFromServer = Date.now();
 }
 
 const generateDiscordTimestamp = (time = Date.now()) => `<t:${Math.floor(time / 1000)}:R>`
@@ -50,7 +40,6 @@ client.on('ready', async () => {
 
   setInterval(async () => {
     await readServerStats();
-
     if (serverStats.timestamp + SCP_SERVER_TIMEOUT <= Date.now()) {
       setStatus("dnd", "Verbindung verloren :(", ActivityType.Custom);
       return;
@@ -58,14 +47,16 @@ client.on('ready', async () => {
 
     if (serverStats.playerCount > 0) {
       // "Schaut 10 Spielern zu." "Schaut 1 Spieler zu."
-      setStatus("online", `${playerCount} Spieler${playerCount == 1 ? "" : "n"} zu.`);
+      setStatus("online", `${serverStats.playerCount} Spieler${serverStats.playerCount == 1 ? "" : "n"} zu.`);
     } else {
       setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
     }
 
-  }, 10000) // every 10 seconds
+  }, 5000) // every 5 seconds
 });
 ServerStatsManager.mainloop();
+
+
 
 BotCommands.init(client);
 
@@ -83,16 +74,29 @@ BotCommands.registerCommand("ping", async (interaction) => {
 
 BotCommands.registerCommand("playerlist", async (interaction) => {
 
-  if (serverStats.playerList.length == 0) {
+
+  if (serverStats.playerList.length == 0 && serverStats.playerCount > 0) { //Data from SCPListKr. all other sources failed
+    const embed = new MessageEmbed()
+      .setTitle(`${serverStats.playerCount} players are online! ` + generateDiscordTimestamp(serverStats.timestamp))
+      .setDescription("Server list is unanvailable... 😔")
+      .setColor("#9141ac")
+      .setFooter({
+        text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
+      });
+
+    await interaction.reply({ embeds: [embed] });
+
+  } else if (serverStats.playerList.length == 0) {
     const embed = new MessageEmbed()
       .setTitle("Playerlist " + generateDiscordTimestamp(serverStats.timestamp))
       .setDescription("No players online right now. 😔")
       .setColor("#9141ac")
       .setFooter({
-        text: "SCP: Zeitvertreib | zeitvertreib-discord",
+        text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
     await interaction.reply({ embeds: [embed] });
+
   } else {
     let embededPlayerList = players.map(player => `- ${player}`).join('\n');
 
@@ -101,7 +105,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
       .setDescription(embededPlayerList)
       .setColor("#9141ac")
       .setFooter({
-        text: "SCP: Zeitvertreib | zeitvertreib-discord",
+        text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
     await interaction.reply({ embeds: [embed] });
