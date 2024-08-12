@@ -1,7 +1,11 @@
 {
-  "state": "offline",
-  "playerList": [],
-  "timestamp": 1723506520922,
-  "playerCount": 0,
-  "provider": "SCPListKr"
+  "state": "",
+  "playerList": [
+    "Dark_Fox",
+    "LOLFOX",
+    "max.bambus76"
+  ],
+  "timestamp": 1723506939382,
+  "playerCount": 3,
+  "provider": "CedMod"
 }

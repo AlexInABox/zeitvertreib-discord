@@ -40,7 +40,7 @@ client.on('ready', async () => {
 
   setInterval(async () => {
     await readServerStats();
-    
+
     if (serverStats.state == "offline") {
       setStatus("dnd", "Server offline", ActivityType.Custom);
       return;
@@ -113,10 +113,10 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
     await interaction.reply({ embeds: [embed] });
 
   } else {
-    let embededPlayerList = players.map(player => `- ${player}`).join('\n');
+    let embededPlayerList = serverStats.playerList.map(player => `- ${player}`).join('\n');
 
     const embed = new MessageEmbed()
-      .setTitle("Playerlist (" + generateDiscordTimestamp(serverStats.timestamp))
+      .setTitle("Playerlist " + generateDiscordTimestamp(serverStats.timestamp))
       .setDescription(embededPlayerList)
       .setColor("#9141ac")
       .setFooter({
