@@ -1,5 +1,6 @@
 #!/bin/bash
 
-npm postinstall
+npm run-script postinstall
 sleep 5
+#npm run-script start == npm start
 npm start
