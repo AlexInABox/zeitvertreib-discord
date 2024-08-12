@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 80
 
-CMD ["npm", "start"]
+CMD ["/usr/bin/bash", "/start.sh"]
