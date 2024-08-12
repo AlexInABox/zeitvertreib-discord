@@ -1,9 +1,10 @@
 import { Client, EmbedBuilder as MessageEmbed, GatewayIntentBits, ActivityType } from 'discord.js';
+import { promises as fs } from 'fs';
 import dotenv from 'dotenv';
 import Pterodactyl from './lib/Pterodactyl.js';
 import BotCommands from './lib/BotCommands.js';
 import DataTransmitServer from "./lib/DataTransmitServer.js";
-import PlayerCountGetter from './lib/PlayerCountGetter.js';
+import ServerStatsManager from './lib/ServerStatsManager.js';
 
 dotenv.config()
 
@@ -22,9 +23,8 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-let players = [];
-let latestServerInfoPacket = {};
-let lastData = Date.now(), lastDataFromServer = Date.now();
+let serverStats = {};
+readServerStats();
 
 const setStatus = (status, text, activity = ActivityType.Watching) => {
   client.user.setActivity(text, { type: activity });
@@ -39,77 +39,40 @@ const resetTimings = (fromServer = false) => {
 
 const generateDiscordTimestamp = (time = Date.now()) => `<t:${Math.floor(time / 1000)}:R>`
 
+async function readServerStats() {
+  serverStats = JSON.parse(await fs.readFile('./var/serverStats.json', 'utf-8'));
+}
+
 client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`)
 
   setStatus("dnd", "Warte auf Server", ActivityType.Custom);
 
   setInterval(async () => {
-    if ((lastDataFromServer + SCP_SERVER_TIMEOUT) <= Date.now()) {
-      const { error, playerCount, playerList } = await PlayerCountGetter.tryGetPlayerList(CEDMOD_INSTANCE_ID, SCPLISTKR_INSTANCE_ID);
-      if (error) {
-        setStatus("dnd", error, ActivityType.Custom);
-        return;
-      }
+    await readServerStats();
 
-      players = playerList;
-
-      resetTimings();
-
-      if (playerCount > 0)
-        setStatus("online", `${playerCount} Spieler${playerCount == 1 ? "" : "n"} zu.`);
-      else
-        setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
-
+    if (serverStats.timestamp + SCP_SERVER_TIMEOUT <= Date.now()) {
+      setStatus("dnd", "Verbindung verloren :(", ActivityType.Custom);
+      return;
     }
-  }, 1.5 * 60 * 1_000) // every 1.5 m
+
+    if (serverStats.playerCount > 0) {
+      // "Schaut 10 Spielern zu." "Schaut 1 Spieler zu."
+      setStatus("online", `${playerCount} Spieler${playerCount == 1 ? "" : "n"} zu.`);
+    } else {
+      setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
+    }
+
+  }, 10000) // every 10 seconds
 });
+ServerStatsManager.mainloop();
 
 BotCommands.init(client);
-
-const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
-
-DataTransmitServer.openServer(80, ENDPOINT_URL);
-
-DataTransmitServer.registerPacketListener("*", (_) => resetTimings(true))
-
-DataTransmitServer.registerGetRequest(ENDPOINT_URL, (req, res) => {
-  res.send(latestServerInfoPacket);
-})
-
-DataTransmitServer.registerPacketListener("Info", (packet) => {
-  players = packet.Players;
-  const playerCount = packet.PlayerCount;
-
-  latestServerInfoPacket = {
-    ...packet,
-    Date: Date.now()
-  }
-
-  if (playerCount > 0)
-    setStatus("online", `${playerCount} Spieler${playerCount == 1 ? "" : "n"} zu.`);
-  else
-    setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
-
-})
-
-DataTransmitServer.registerPacketListener("RoundRestart", (_) => {
-  setStatus("dnd", "Rundenneustart", ActivityType.Custom);
-})
-
-DataTransmitServer.registerPacketListener("ServerAvailable", (_) => {
-  setStatus("dnd", "Generiere Karte ...", ActivityType.Custom);
-})
-
-DataTransmitServer.registerPacketListener("MapGenerated", (_) => {
-  setStatus("idle", "Warte auf Spieler ...", ActivityType.Custom);
-})
-
-
 
 client.login(TOKEN);
 
 // ------------ Base 
+const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
 BotCommands.registerCommand("ping", async (interaction) => {
   await interaction.reply('Pong!');
@@ -120,28 +83,26 @@ BotCommands.registerCommand("ping", async (interaction) => {
 
 BotCommands.registerCommand("playerlist", async (interaction) => {
 
-  if (players.length === 0) {
+  if (serverStats.playerList.length == 0) {
     const embed = new MessageEmbed()
-      .setTitle("Playerlist")
-      .setDescription("No players online right now. 😔\nUpdated: " + generateDiscordTimestamp(lastData))
+      .setTitle("Playerlist " + generateDiscordTimestamp(serverStats.timestamp))
+      .setDescription("No players online right now. 😔")
       .setColor("#9141ac")
       .setFooter({
-        text: "SCP: Zeitvertreib",
-      })
-      .setTimestamp();
+        text: "SCP: Zeitvertreib | zeitvertreib-discord",
+      });
 
     await interaction.reply({ embeds: [embed] });
   } else {
-    let playerList = players.map(player => `- ${player}`).join('\n');
+    let embededPlayerList = players.map(player => `- ${player}`).join('\n');
 
     const embed = new MessageEmbed()
-      .setTitle(`Playerlist (${players.length})`)
-      .setDescription(playerList + "\nUpdated: " + generateDiscordTimestamp(lastData))
+      .setTitle("Playerlist (" + generateDiscordTimestamp(serverStats.timestamp))
+      .setDescription(embededPlayerList)
       .setColor("#9141ac")
       .setFooter({
-        text: "SCP: Zeitvertreib",
-      })
-      .setTimestamp();
+        text: "SCP: Zeitvertreib | zeitvertreib-discord",
+      });
 
     await interaction.reply({ embeds: [embed] });
   }
