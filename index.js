@@ -29,8 +29,24 @@ const setStatus = (status, text, activity = ActivityType.Watching) => {
 
 const generateDiscordTimestamp = (time = Date.now()) => `<t:${Math.floor(time / 1000)}:R>`
 
+async function writeServerStats() {
+  await fs.writeFile('./var/serverStats.json', JSON.stringify(serverStats, null, 2));
+}
 async function readServerStats() {
+  try {
   serverStats = JSON.parse(await fs.readFile('./var/serverStats.json', 'utf-8'));
+  } catch (e) {
+    console.error("Failed to read serverStats.json");
+    console.log("Rebuilding serverStats.json...");
+    serverStats = {
+      state: "offline",
+      playerCount: 0,
+      playerList: [],
+      timestamp: Date.now(),
+      provider: "silly kittens"
+    }
+    await writeServerStats();
+  }
 }
 
 client.on('ready', async () => {
