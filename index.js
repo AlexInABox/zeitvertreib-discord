@@ -87,6 +87,7 @@ client.login(TOKEN);
 const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
 BotCommands.registerCommand("ping", async (interaction) => {
+  await interaction.deferReply();
   await interaction.reply('Pong!');
 })
 
@@ -94,6 +95,7 @@ BotCommands.registerCommand("ping", async (interaction) => {
 // ------------ Playerlist
 
 BotCommands.registerCommand("playerlist", async (interaction) => {
+  await interaction.deferReply();
 
 
   if (serverStats.state == "offline") {
@@ -146,6 +148,8 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
 // ------------ Pterodactyl
 
 BotCommands.registerCommand("reinstall", async (interaction) => {
+  await interaction.deferReply();
+
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
     await interaction.reply('You do not have permission to use this command.');
     return;
@@ -186,6 +190,8 @@ BotCommands.registerCommand("reinstall", async (interaction) => {
 })
 
 BotCommands.registerCommand("restart", async (interaction) => {
+  await interaction.deferReply();
+
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
     await interaction.reply('You do not have permission to use this command.');
     return;
@@ -200,6 +206,8 @@ BotCommands.registerCommand("restart", async (interaction) => {
   await interaction.editReply(`Restarted server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
 })
 BotCommands.registerCommand("start", async (interaction) => {
+  await interaction.deferReply();
+
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
     await interaction.reply('You do not have permission to use this command.');
     return;
@@ -214,6 +222,8 @@ BotCommands.registerCommand("start", async (interaction) => {
   await interaction.editReply(`Started server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
 })
 BotCommands.registerCommand("stop", async (interaction) => {
+  await interaction.deferReply();
+  
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
     await interaction.reply('You do not have permission to use this command.');
     return;
