@@ -88,7 +88,7 @@ const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
 BotCommands.registerCommand("ping", async (interaction) => {
   await interaction.deferReply();
-  await interaction.reply('Pong!');
+  await interaction.editReply('Pong!');
 })
 
 
@@ -106,7 +106,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
         text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 
   } else if (serverStats.playerList.length == 0 && serverStats.playerCount > 0) { //Data from SCPListKr. all other sources failed
     const embed = new MessageEmbed()
@@ -117,7 +117,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
         text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 
   } else if (serverStats.playerList.length == 0) {
     const embed = new MessageEmbed()
@@ -128,7 +128,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
         text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
 
   } else {
     let embededPlayerList = serverStats.playerList.map(player => `- ${player}`).join('\n');
@@ -141,7 +141,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
         text: "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
       });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 })
 
@@ -151,10 +151,10 @@ BotCommands.registerCommand("reinstall", async (interaction) => {
   await interaction.deferReply();
 
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
-    await interaction.reply('You do not have permission to use this command.');
+    await interaction.editReply('You do not have permission to use this command.');
     return;
   }
-  await interaction.reply('Reinstalling...');
+  await interaction.editReply('Reinstalling...');
   try {
     await Pterodactyl.reinstallServer(PANEL_BASE_URL, SERVER_APPLICATION_ID, PANEL_APPLICATION_TOKEN)
   } catch (e) {
@@ -193,10 +193,10 @@ BotCommands.registerCommand("restart", async (interaction) => {
   await interaction.deferReply();
 
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
-    await interaction.reply('You do not have permission to use this command.');
+    await interaction.editReply('You do not have permission to use this command.');
     return;
   }
-  await interaction.reply('Restarting server...');
+  await interaction.editReply('Restarting server...');
   try {
     await Pterodactyl.sendPowerEventToServer("restart", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
   } catch (e) {
@@ -209,10 +209,10 @@ BotCommands.registerCommand("start", async (interaction) => {
   await interaction.deferReply();
 
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
-    await interaction.reply('You do not have permission to use this command.');
+    await interaction.editReply('You do not have permission to use this command.');
     return;
   }
-  await interaction.reply('Starting server...');
+  await interaction.editReply('Starting server...');
   try {
     await Pterodactyl.sendPowerEventToServer("start", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
   } catch (e) {
@@ -225,10 +225,10 @@ BotCommands.registerCommand("stop", async (interaction) => {
   await interaction.deferReply();
   
   if (!isUserAuthorized(interaction.user.id)) { //if not the owner
-    await interaction.reply('You do not have permission to use this command.');
+    await interaction.editReply('You do not have permission to use this command.');
     return;
   }
-  await interaction.reply('Stopping server...');
+  await interaction.editReply('Stopping server...');
   try {
     await Pterodactyl.sendPowerEventToServer("stop", PANEL_BASE_URL, SERVER_CLIENT_ID, PANEL_CLIENT_TOKEN)
   } catch (e) {
