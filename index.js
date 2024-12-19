@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import Pterodactyl from "./lib/Pterodactyl.js";
 import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
+import Logging from "./lib/Logging.js";
 
 dotenv.config();
 
@@ -47,8 +48,8 @@ async function readServerStats() {
       await fs.readFile("./var/serverStats.json", "utf-8")
     );
   } catch (e) {
-    console.error("Failed to read serverStats.json");
-    console.log("Rebuilding serverStats.json...");
+    Logging.logError("Failed to read serverStats.json");
+    Logging.logInfo("Rebuilding serverStats.json...");
     serverStats = {
       state: "offline",
       playerCount: 0,
@@ -61,7 +62,7 @@ async function readServerStats() {
 }
 
 client.on("ready", async () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  Logging.logInfo(`Logged in as ${client.user.tag}!`);
 
   setStatus("dnd", "Warte auf Server", ActivityType.Custom);
 
@@ -97,6 +98,7 @@ BotCommands.init(client);
 
 client.login(TOKEN);
 
+// ############# Command Handling
 // ------------ Base
 const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
@@ -187,13 +189,13 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
     } catch (error) {
       attempts++;
       if (attempts < maxAttempts) {
-        console.error(
+        Logging.logError(
           `Attempt ${attempts} failed. Retrying in 1 second...`,
           error
         );
         await delay(1000); // Wait for 1 second before retrying
       } else {
-        console.error("All attempts failed.", error);
+        Logging.logCritical("All attempts failed.", error);
         await interaction.editReply({
           content:
             "An error occurred while fetching the player list. Please try again later.",
@@ -223,7 +225,9 @@ BotCommands.registerCommand("reinstall", async (interaction) => {
       PANEL_APPLICATION_TOKEN
     );
   } catch (e) {
+    Logging.error("Failed trying to reinstall server " + e);
     await interaction.editReply("Error: " + e);
+    return;
   }
 
   await interaction.editReply(`Reinstalling server. Please wait...`);
