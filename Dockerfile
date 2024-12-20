@@ -4,6 +4,7 @@ WORKDIR /zeitvertreib-discord
 
 COPY package*.json ./
 COPY setupCommands.js ./
+COPY lib ./lib
 
 RUN npm install
 
