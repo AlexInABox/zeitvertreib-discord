@@ -9,6 +9,8 @@ import dotenv from "dotenv";
 import Pterodactyl from "./lib/Pterodactyl.js";
 import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
+import Logging from "./lib/Logging.js";
+
 
 dotenv.config();
 
@@ -47,8 +49,8 @@ async function readServerStats() {
       await fs.readFile("./var/serverStats.json", "utf-8")
     );
   } catch (e) {
-    console.error("Failed to read serverStats.json");
-    console.log("Rebuilding serverStats.json...");
+    Logging.logError("Failed to read serverStats.json");
+    Logging.logInfo("Rebuilding serverStats.json...");
     serverStats = {
       state: "offline",
       playerCount: 0,
@@ -61,7 +63,8 @@ async function readServerStats() {
 }
 
 client.on("ready", async () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  Logging.logInfo(`Logged in as ${client.user.tag}!`);
+
 
   setStatus("dnd", "Warte auf Server", ActivityType.Custom);
 
@@ -97,6 +100,7 @@ BotCommands.init(client);
 
 client.login(TOKEN);
 
+// ############# Command Handling
 // ------------ Base
 const isUserAuthorized = (userID) => AUTHORIZED_USER_IDS.includes(userID);
 
@@ -108,64 +112,98 @@ BotCommands.registerCommand("ping", async (interaction) => {
 // ------------ Playerlist
 
 BotCommands.registerCommand("playerlist", async (interaction) => {
-  await interaction.deferReply();
+  let attempts = 0;
+  const maxAttempts = 5;
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  if (serverStats.state == "offline") {
-    const embed = new MessageEmbed()
-      .setTitle(
-        "SERVER OFFLINE " + generateDiscordTimestamp(serverStats.timestamp)
-      )
-      .setColor("#ff787f")
-      .setFooter({
-        text:
-          "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
-      });
+  while (attempts < maxAttempts) {
+    try {
+      await interaction.deferReply();
 
-    await interaction.editReply({ embeds: [embed] });
-  } else if (
-    serverStats.playerList.length == 0 &&
-    serverStats.playerCount > 0
-  ) {
-    //Data from SCPListKr. all other sources failed
-    const embed = new MessageEmbed()
-      .setTitle(
-        `${serverStats.playerCount} players are online! ` +
-          generateDiscordTimestamp(serverStats.timestamp)
-      )
-      .setDescription("Server list is unanvailable... 😔")
-      .setColor("#9141ac")
-      .setFooter({
-        text:
-          "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
-      });
+      if (serverStats.state == "offline") {
+        const embed = new MessageEmbed()
+          .setTitle(
+            "SERVER OFFLINE " + generateDiscordTimestamp(serverStats.timestamp)
+          )
+          .setColor("#ff787f")
+          .setFooter({
+            text:
+              "SCP: Zeitvertreib | " +
+              (serverStats.provider || "silly kittens"),
+          });
 
-    await interaction.editReply({ embeds: [embed] });
-  } else if (serverStats.playerList.length == 0) {
-    const embed = new MessageEmbed()
-      .setTitle("Playerlist " + generateDiscordTimestamp(serverStats.timestamp))
-      .setDescription("No players online right now. 😔")
-      .setColor("#9141ac")
-      .setFooter({
-        text:
-          "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
-      });
+        await interaction.editReply({ embeds: [embed] });
+      } else if (
+        serverStats.playerList.length == 0 &&
+        serverStats.playerCount > 0
+      ) {
+        // Data from SCPListKr. all other sources failed
+        const embed = new MessageEmbed()
+          .setTitle(
+            `${serverStats.playerCount} players are online! ` +
+              generateDiscordTimestamp(serverStats.timestamp)
+          )
+          .setDescription("Server list is unavailable... 😔")
+          .setColor("#9141ac")
+          .setFooter({
+            text:
+              "SCP: Zeitvertreib | " +
+              (serverStats.provider || "silly kittens"),
+          });
 
-    await interaction.editReply({ embeds: [embed] });
-  } else {
-    let embededPlayerList = serverStats.playerList
-      .map((player) => `- ${player}`)
-      .join("\n");
+        await interaction.editReply({ embeds: [embed] });
+      } else if (serverStats.playerList.length == 0) {
+        const embed = new MessageEmbed()
+          .setTitle(
+            "Playerlist " + generateDiscordTimestamp(serverStats.timestamp)
+          )
+          .setDescription("No players online right now. 😔")
+          .setColor("#9141ac")
+          .setFooter({
+            text:
+              "SCP: Zeitvertreib | " +
+              (serverStats.provider || "silly kittens"),
+          });
 
-    const embed = new MessageEmbed()
-      .setTitle("Playerlist " + generateDiscordTimestamp(serverStats.timestamp))
-      .setDescription(embededPlayerList)
-      .setColor("#9141ac")
-      .setFooter({
-        text:
-          "SCP: Zeitvertreib | " + (serverStats.provider || "silly kittens"),
-      });
+        await interaction.editReply({ embeds: [embed] });
+      } else {
+        let embededPlayerList = serverStats.playerList
+          .map((player) => `- ${player}`)
+          .join("\n");
 
-    await interaction.editReply({ embeds: [embed] });
+        const embed = new MessageEmbed()
+          .setTitle(
+            "Playerlist " + generateDiscordTimestamp(serverStats.timestamp)
+          )
+          .setDescription(embededPlayerList)
+          .setColor("#9141ac")
+          .setFooter({
+            text:
+              "SCP: Zeitvertreib | " +
+              (serverStats.provider || "silly kittens"),
+          });
+
+        await interaction.editReply({ embeds: [embed] });
+      }
+
+      // Exit the loop if successful
+      return;
+    } catch (error) {
+      attempts++;
+      if (attempts < maxAttempts) {
+        Logging.logError(
+          `Attempt ${attempts} failed. Retrying in 1 second...`,
+          error
+        );
+        await delay(1000); // Wait for 1 second before retrying
+      } else {
+        Logging.logCritical("All attempts failed.", error);
+        await interaction.editReply({
+          content:
+            "An error occurred while fetching the player list. Please try again later.",
+        });
+      }
+    }
   }
 });
 
@@ -189,7 +227,9 @@ BotCommands.registerCommand("reinstall", async (interaction) => {
       PANEL_APPLICATION_TOKEN
     );
   } catch (e) {
+    Logging.error("Failed trying to reinstall server " + e);
     await interaction.editReply("Error: " + e);
+    return;
   }
 
   await interaction.editReply(`Reinstalling server. Please wait...`);

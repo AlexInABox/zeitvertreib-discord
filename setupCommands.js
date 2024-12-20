@@ -1,3 +1,4 @@
+import Logging from "./lib/Logging.js";
 // should all commands be deleted before being registered
 const DELETE_BEFORE = false;
 
@@ -35,7 +36,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 if (!process.env.DISCORD_TOKEN) {
-  console.warn("Could not register discord commands since no token was found!");
+  Logging.logCritical(
+    "Could not register discord commands since no token was found!"
+  );
   process.exit();
 }
 
@@ -49,7 +52,7 @@ try {
   if (DELETE_BEFORE) await deleteAllCommands();
   await registerAllCommands();
 } catch (error) {
-  console.error(error);
+  Logging.logError("Failed to delete all commands: " + error);
 }
 
 async function deleteAllCommands() {
@@ -61,16 +64,18 @@ async function deleteAllCommands() {
   // for global commands
   await rest
     .put(Routes.applicationCommands(CLIENT_ID), { body: [] })
-    .then(() => console.log("Successfully deleted all application commands."))
+    .then(() =>
+      Logging.logInfo("Successfully deleted all application commands.")
+    )
     .catch(console.error);
 }
 
 async function registerAllCommands() {
-  console.log("Started refreshing application (/) commands.");
+  Logging.logInfo("Started refreshing application (/) commands.");
 
   await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
     body: COMMANDS,
   });
 
-  console.log("Successfully reloaded application (/) commands.");
+  Logging.logInfo("Successfully reloaded application (/) commands.");
 }
