@@ -11,6 +11,7 @@ import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
 import Logging from "./lib/Logging.js";
 
+
 dotenv.config();
 
 const AUTHORIZED_USER_IDS = process.env.AUTHORIZED_USER_IDS;
@@ -63,6 +64,7 @@ async function readServerStats() {
 
 client.on("ready", async () => {
   Logging.logInfo(`Logged in as ${client.user.tag}!`);
+
 
   setStatus("dnd", "Warte auf Server", ActivityType.Custom);
 
