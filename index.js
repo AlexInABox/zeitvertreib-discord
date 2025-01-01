@@ -1,5 +1,10 @@
 import {
   Client,
+  Events,
+  ActionRowBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
   EmbedBuilder as MessageEmbed,
   GatewayIntentBits,
   ActivityType,
@@ -10,7 +15,6 @@ import Pterodactyl from "./lib/Pterodactyl.js";
 import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
 import Logging from "./lib/Logging.js";
-
 
 dotenv.config();
 
@@ -64,7 +68,6 @@ async function readServerStats() {
 
 client.on("ready", async () => {
   Logging.logInfo(`Logged in as ${client.user.tag}!`);
-
 
   setStatus("dnd", "Warte auf Server", ActivityType.Custom);
 
@@ -210,67 +213,110 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
 // ------------ Pterodactyl
 
 BotCommands.registerCommand("reinstall", async (interaction) => {
-  await interaction.deferReply();
-
   if (!isUserAuthorized(interaction.user.id)) {
     //if not the owner
+    await interaction.deferReply();
     await interaction.editReply(
       "You do not have permission to use this command."
     );
     return;
   }
-  await interaction.editReply("Reinstalling...");
-  try {
-    await Pterodactyl.reinstallServer(
-      PANEL_BASE_URL,
-      SERVER_APPLICATION_ID,
-      PANEL_APPLICATION_TOKEN
-    );
-  } catch (e) {
-    Logging.error("Failed trying to reinstall server " + e);
-    await interaction.editReply("Error: " + e);
-    return;
-  }
 
-  await interaction.editReply(`Reinstalling server. Please wait...`);
+  // Create the modal
+  const modal = new ModalBuilder()
+    .setCustomId("reinstall")
+    .setTitle("Formular für die Neuinstallation des Servers");
 
-  const maxDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
-  const intervalDuration = 5 * 1000; // 5 seconds in milliseconds
-  let elapsedTime = 0;
+  // Create the text input components
+  const reasonInput = new TextInputBuilder()
+    .setCustomId("reason")
+    // The label is the prompt the user sees for this input
+    .setLabel("Was ist der Grund für die Neuinstallation?")
+    // Short means only a single line of text
+    .setMinLength(10)
+    .setRequired(true)
+    .setStyle(TextInputStyle.Paragraph);
 
-  const interval = setInterval(async () => {
-    elapsedTime += intervalDuration;
+  // An action row only holds one text input,
+  // so you need one action row per text input.
+  const firstActionRow = new ActionRowBuilder().addComponents(reasonInput);
 
-    if (
-      !(await Pterodactyl.isServerInstalling(
-        PANEL_BASE_URL,
-        SERVER_CLIENT_ID,
-        PANEL_CLIENT_TOKEN
-      ))
-    ) {
-      clearInterval(interval);
-      await interaction.editReply("Starting server...");
-      try {
-        await Pterodactyl.sendPowerEventToServer(
-          "start",
-          PANEL_BASE_URL,
-          SERVER_CLIENT_ID,
-          PANEL_CLIENT_TOKEN
-        );
-      } catch (e) {
-        await interaction.editReply("Error: " + e);
-      }
-      await interaction.editReply("Server has been successfully reinstalled!");
+  // Add inputs to the modal
+  modal.addComponents(firstActionRow);
+
+  // Show the modal to the user
+  await interaction.showModal(modal);
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isModalSubmit()) return;
+  if (interaction.customId === "reinstall") {
+    await interaction.deferReply();
+
+    const reason = interaction.fields.getTextInputValue("reason");
+    if (/cedmod/i.test(reason)) {
+      // Respond with the desired message
+      await interaction.editReply(
+        "Keine Neuinstallation kann CedMod fixen. Wir können nur abwarten :3"
+      );
       return;
     }
 
-    if (elapsedTime >= maxDuration) {
-      clearInterval(interval);
-      await interaction.editReply(
-        "Reinstallation process did not complete within the expected time frame."
+    await interaction.editReply("Reinstalling...");
+    try {
+      await Pterodactyl.reinstallServer(
+        PANEL_BASE_URL,
+        SERVER_APPLICATION_ID,
+        PANEL_APPLICATION_TOKEN
       );
+    } catch (e) {
+      Logging.error("Failed trying to reinstall server " + e);
+      await interaction.editReply("Error: " + e);
+      return;
     }
-  }, intervalDuration);
+
+    await interaction.editReply(`Reinstalling server. Please wait...`);
+
+    const maxDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
+    const intervalDuration = 5 * 1000; // 5 seconds in milliseconds
+    let elapsedTime = 0;
+
+    const interval = setInterval(async () => {
+      elapsedTime += intervalDuration;
+
+      if (
+        !(await Pterodactyl.isServerInstalling(
+          PANEL_BASE_URL,
+          SERVER_CLIENT_ID,
+          PANEL_CLIENT_TOKEN
+        ))
+      ) {
+        clearInterval(interval);
+        await interaction.editReply("Starting server...");
+        try {
+          await Pterodactyl.sendPowerEventToServer(
+            "start",
+            PANEL_BASE_URL,
+            SERVER_CLIENT_ID,
+            PANEL_CLIENT_TOKEN
+          );
+        } catch (e) {
+          await interaction.editReply("Error: " + e);
+        }
+        await interaction.editReply(
+          "Server has been successfully reinstalled! Reason: " + reason
+        );
+        return;
+      }
+
+      if (elapsedTime >= maxDuration) {
+        clearInterval(interval);
+        await interaction.editReply(
+          "Reinstallation process did not complete within the expected time frame."
+        );
+      }
+    }, intervalDuration);
+  }
 });
 
 BotCommands.registerCommand("restart", async (interaction) => {
