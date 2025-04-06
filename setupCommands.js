@@ -28,6 +28,10 @@ const COMMANDS = [
     name: "playerlist",
     description: "Get a list of players on the SCP:SL server.",
   },
+  {
+    name: "sync",
+    description: "Funny dev command.",
+  },
 ];
 
 import { REST, Routes } from "discord.js";

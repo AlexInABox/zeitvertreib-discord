@@ -7,7 +7,7 @@ import {
   TextInputStyle,
   EmbedBuilder as MessageEmbed,
   GatewayIntentBits,
-  ActivityType,
+  ActivityType
 } from "discord.js";
 import { promises as fs } from "fs";
 import dotenv from "dotenv";
@@ -15,6 +15,7 @@ import Pterodactyl from "./lib/Pterodactyl.js";
 import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
 import Logging from "./lib/Logging.js";
+import SyncCommand from "./lib/syncCommand/Sync.js";
 
 dotenv.config();
 
@@ -28,7 +29,13 @@ const SERVER_APPLICATION_ID = process.env.SERVER_APPLICATION_ID;
 const SERVER_CLIENT_ID = process.env.SERVER_CLIENT_ID;
 const TOKEN = process.env.DISCORD_TOKEN;
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,  // Important for reading message content
+  ]
+});
 
 let serverStats = {};
 readServerStats();
@@ -88,8 +95,7 @@ client.on("ready", async () => {
       // "Schaut 10 Spielern zu." "Schaut 1 Spieler zu."
       setStatus(
         "online",
-        `${serverStats.playerCount} Spieler${
-          serverStats.playerCount == 1 ? "" : "n"
+        `${serverStats.playerCount} Spieler${serverStats.playerCount == 1 ? "" : "n"
         } zu.`
       );
     } else {
@@ -144,7 +150,7 @@ BotCommands.registerCommand("playerlist", async (interaction) => {
         const embed = new MessageEmbed()
           .setTitle(
             `${serverStats.playerCount} players are online! ` +
-              generateDiscordTimestamp(serverStats.timestamp)
+            generateDiscordTimestamp(serverStats.timestamp)
           )
           .setDescription("Server list is unavailable... 😔")
           .setColor("#9141ac")
