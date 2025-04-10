@@ -16,6 +16,7 @@ import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
 import Logging from "./lib/Logging.js";
 import SyncCommand from "./lib/syncCommand/Sync.js";
+import ApiServer from "./lib/ApiServer.js";
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ const client = new Client({
   ]
 });
 
-let serverStats = {};
+export let serverStats = {};
 readServerStats();
 
 const setStatus = (status, text, activity = ActivityType.Watching) => {
