@@ -18,6 +18,7 @@ import BotCommands from "./lib/BotCommands.js";
 import ServerStatsManager from "./lib/ServerStatsManager.js";
 import Logging from "./lib/Logging.js";
 import "./lib/syncCommand/Sync.js";
+import DDoSFix from "./lib/ddospanic/index.js"
 
 dotenv.config();
 
@@ -372,4 +373,37 @@ BotCommands.registerCommand("stop", async (interaction: ChatInputCommandInteract
   }
 
   await interaction.editReply(`Stopped server! Check status here: ${PANEL_BASE_URL}server/${SERVER_CLIENT_ID}`);
+});
+
+let lastDdosFixTimestamp = 0; // Global timestamp
+
+BotCommands.registerCommand("ddosfix", async (interaction: ChatInputCommandInteraction) => {
+  await interaction.deferReply();
+
+  if (!isUserAuthorized(interaction.user.id)) {
+    await interaction.editReply("You do not have permission to use this command.");
+    return;
+  }
+
+  const now = Date.now();
+  const FIVE_MINUTES = 5 * 60 * 1000;
+
+  if (now - lastDdosFixTimestamp < FIVE_MINUTES) {
+    const minutesLeft = Math.ceil((FIVE_MINUTES - (now - lastDdosFixTimestamp)) / 60000);
+    await interaction.editReply(`⏳ Please wait ${minutesLeft} more minute(s) before using this command again.`);
+    return;
+  }
+
+  lastDdosFixTimestamp = now;
+
+  await interaction.editReply("Executing DDoS fix...");
+
+  try {
+    await DDoSFix.ddosFixWithDiscordFeedback((msg) => interaction.editReply(msg));
+  } catch (e) {
+    Logging.logError("Failed trying to fix DDoS attack " + e);
+    return;
+  }
+
+  Logging.logInfo("DDoS fix executed successfully.");
 });

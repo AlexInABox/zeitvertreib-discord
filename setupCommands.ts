@@ -14,6 +14,7 @@ const COMMANDS = [
   { name: "stop", description: "Stop the SCP:SL server." },
   { name: "playerlist", description: "Get a list of players on the SCP:SL server." },
   { name: "sync", description: "Funny dev command." },
+  { name: "ddosfix", description: "Executing this command will fix **ANY** DDoS attack. Use this command only when necessary please!" }
 ];
 
 const TOKEN: string = process.env.DISCORD_TOKEN ?? (() => { throw new Error("DISCORD_TOKEN is not defined"); })();
