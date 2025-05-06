@@ -8,10 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY index.ts ./
-COPY setupCommands.ts ./
-COPY lib ./lib
+COPY . .
 
 RUN npm install
 RUN npm run build
