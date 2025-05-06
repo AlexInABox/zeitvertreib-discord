@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
-COPY setupCommands.js ./
+COPY setupCommands.ts ./
 COPY lib ./lib
 COPY . .
 
