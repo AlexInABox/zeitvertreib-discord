@@ -25,6 +25,7 @@ WORKDIR /zeitvertreib-discord
 
 # Copy only the built output
 COPY --from=builder /app/dist/ ./
+COPY package*.json ./
 COPY start.sh ./
 
 EXPOSE 3000 3001
