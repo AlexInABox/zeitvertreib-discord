@@ -1,10 +1,7 @@
 {
-  "state": "",
-  "playerList": [
-    "Sans",
-    "Schadow Monarch"
-  ],
-  "timestamp": 1734626714495,
-  "playerCount": 2,
-  "provider": "CedMod"
+  "state": "offline",
+  "playerCount": 0,
+  "playerList": [],
+  "provider": "SCPListKr",
+  "timestamp": 1746521214129
 }

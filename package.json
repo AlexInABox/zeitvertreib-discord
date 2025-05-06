@@ -1,12 +1,12 @@
 {
   "name": "zeitvertreib-discord",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "node setupCommands.js"
+    "build": "npx tsc",
+    "start": "node ./dist/index.js",
+    "preprep": "node ./dist/setupCommands.js"
   },
   "repository": {
     "type": "git",
@@ -34,5 +34,15 @@
     "passport": "^0.7.0",
     "passport-steam": "^1.0.18",
     "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/express-session": "^1.18.1",
+    "@types/passport": "^1.0.17",
+    "@types/passport-steam": "^1.0.6",
+    "@types/request": "^2.48.12",
+    "typescript": "^5.8.3"
   }
 }

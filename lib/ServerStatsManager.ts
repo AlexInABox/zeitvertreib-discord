@@ -4,24 +4,39 @@ import DataTransmitServer from "./DataTransmitServer.js";
 import Logging from "./Logging.js";
 import { promises as fs } from "fs";
 import dotenv from "dotenv";
+
 dotenv.config();
 
-let serverStats = {};
-async function readServerStats() {
-  serverStats = JSON.parse(
-    await fs.readFile("./var/serverStats.json", "utf-8")
-  );
+interface ServerStats {
+  timestamp: number;
+  playerCount: number;
+  [key: string]: any;
 }
 
-const timeoutThreshold =
-  Number.parseInt(process.env.SCP_SERVER_TIMEOUT) | 30000;
-const instanceId = process.env.CEDMOD_INSTANCE_ID;
-const whichCedmodServer = process.env.CEDMOD_WHICH_SERVER - 1;
-const serverId = process.env.SCPLISTKR_SERVER_ID;
+let serverStats: ServerStats = {
+  timestamp: 0,
+  playerCount: 0
+};
+
+async function readServerStats() {
+  try {
+    serverStats = JSON.parse(
+      await fs.readFile("./var/serverStats.json", "utf-8")
+    );
+  } catch (e) {
+    Logging.logError("[ServerStatsManager] Failed to read serverStats.json");
+  }
+}
+
+const timeoutThreshold = Number.parseInt(process.env.SCP_SERVER_TIMEOUT || "30000");
+const instanceId: number = Number.parseInt(process.env.CEDMOD_INSTANCE_ID || "0");
+const whichCedmodServer = process.env.CEDMOD_WHICH_SERVER ?
+  Number.parseInt(process.env.CEDMOD_WHICH_SERVER) - 1 : 0;
+const serverId = Number.parseInt(process.env.SCPLISTKR_SERVER_ID || "0");
 
 async function mainloop() {
   try {
-    DataTransmitServer.initalize();
+    DataTransmitServer.initialize();
   } catch (e) {
     Logging.logError(
       "[ServerStatsManager] DataTransmitServer failed horribly. We are doomed."
@@ -29,9 +44,10 @@ async function mainloop() {
     Logging.logCritical("[DataTransmitServer] " + e);
   }
 
-  //every 30 seconds check if the serverStats.json is still up to date
+  // Every 30 seconds check if the serverStats.json is still up to date
   setInterval(async () => {
     await readServerStats();
+
     if (serverStats.timestamp + timeoutThreshold <= Date.now()) {
       Logging.logWarning(
         "[ServerStatsManager] DataTransmitServer hasn't sent any data in the last 30 seconds. Trying to get player list from alternative sources..."
@@ -47,6 +63,7 @@ async function mainloop() {
       }
 
       await readServerStats();
+
       if (serverStats.timestamp + timeoutThreshold > Date.now()) {
         Logging.logInfo(
           "[ServerStatsManager] Successfully got player list from CedMod."
@@ -55,6 +72,7 @@ async function mainloop() {
         if (serverStats.playerCount > 0) {
           return;
         }
+
         Logging.logInfo(
           "[ServerStatsManager] Apparently there are no players on the server. I'm gonna ask SCPListKr just to be sure."
         );
@@ -69,10 +87,10 @@ async function mainloop() {
         Logging.logError("[SCPListKr] " + e);
         return;
       }
-      Logging.logError(
+
+      Logging.logInfo(
         "[ServerStatsManager] Successfully got player count from SCPListKr."
       );
-      return;
     }
   }, 30000);
 }
