@@ -69,6 +69,7 @@ const generateDiscordTimestamp = (time = Date.now()) =>
   `<t:${Math.floor(time / 1000)}:R>`;
 
 async function writeServerStats() {
+  await fs.mkdir("./var", { recursive: true });
   await fs.writeFile(
     "./var/serverStats.json",
     JSON.stringify(serverStats, null, 2)
