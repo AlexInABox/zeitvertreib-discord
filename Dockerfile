@@ -30,4 +30,6 @@ COPY start.sh ./
 
 EXPOSE 3000 3001
 
+RUN npm install --omit=dev
+
 CMD ["/usr/bin/bash", "start.sh"]
