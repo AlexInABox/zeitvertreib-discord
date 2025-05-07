@@ -380,7 +380,20 @@ let lastDdosFixTimestamp = 0; // Global timestamp
 BotCommands.registerCommand("ddosfix", async (interaction: ChatInputCommandInteraction) => {
   await interaction.deferReply();
 
-  if (!isUserAuthorized(interaction.user.id)) {
+  const userId = interaction.user.id;
+  let roleIds: string[] = [];
+  if (interaction.member && "roles" in interaction.member) {
+    const roles = interaction.member.roles;
+    if (Array.isArray(roles)) {
+      roleIds = roles;
+    } else if (typeof roles.cache === "object") {
+      roleIds = Array.from(roles.cache.keys());
+    }
+  }
+
+  const isAuthorized = isUserAuthorized(userId) || roleIds.some(id => isUserAuthorized(id));
+
+  if (!isAuthorized) {
     await interaction.editReply("You do not have permission to use this command.");
     return;
   }
