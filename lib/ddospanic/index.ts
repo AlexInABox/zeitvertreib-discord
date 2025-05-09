@@ -11,7 +11,7 @@ const privateIp = "172.31.22.106";
 async function ddosFix() {
     try {
         const newIp = await allocateAndAssignElasticIP(instanceId, privateIp);
-        const oldIp = await getOldIpFromCloudflare(process.env.CLOUDFLARE_ZONE_ID!, "zeitvertreib.vip");
+        const oldIp = await getOldIpFromCloudflare(process.env.CLOUDFLARE_ZONE_ID!, "node.zeitvertreib.vip");
         updateCloudflareARecords(process.env.CLOUDFLARE_ZONE_ID!, oldIp, newIp);
         replaceIPInFiles(newIp);
     } catch (err) {
