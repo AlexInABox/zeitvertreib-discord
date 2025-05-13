@@ -5,11 +5,7 @@ config();
 
 const sftp = new SFTPClient();
 
-// Hardcoded list of Docker container IDs
-const dockerContainerIds = [
-    "2a763cc5-ec26-4a34-9673-685256138b1d",
-    "7c4f034e-5d12-48ca-8e8a-134195a084db",
-];
+// Script path for Docker container restart
 
 const targetFiles = [
     "/var/lib/pterodactyl/volumes/2a763cc5-ec26-4a34-9673-685256138b1d/.config/SCP Secret Laboratory/config/7000/config_gameplay.txt",
@@ -18,7 +14,7 @@ const targetFiles = [
 
 export const replaceIPInFiles = async (newIp: string) => {
     const sftpConfig = {
-        host: newIp,
+        host: String(process.env.SFTP_IP),
         port: Number(process.env.SFTP_PORT || 22),
         username: process.env.SFTP_USER!,
         password: process.env.SFTP_PASS!,
@@ -48,39 +44,38 @@ export const replaceIPInFiles = async (newIp: string) => {
     await sftp.end();
 
     // SSH connection to restart Docker containers
-    dockerContainerIds.forEach((containerId) => {
-        const sshClient = new Client();
+    const sshClient = new Client();
 
-        sshClient.on('ready', () => {
-            sshClient.exec(
-                `docker restart ${containerId}`,
-                (err, stream) => {
-                    if (err) {
-                        console.error(`Error restarting container ${containerId}: ${err}`);
-                        return;
-                    }
-
-                    stream.on('close', (code: number, signal: any) => {
-                        if (code === 0) {
-                            console.log(`Successfully restarted container ${containerId}`);
-                        } else {
-                            console.warn(`Container restart failed with exit code ${code}`);
-                        }
-                        sshClient.end();
-                    }).on('data', (data: any) => {
-                        console.log(`stdout: ${data}`);
-                    }).stderr.on('data', (data) => {
-                        console.warn(`stderr: ${data}`);
-                    });
+    sshClient.on('ready', () => {
+        sshClient.exec(
+            `/home/ddospanic/softRestart/docker_sr.sh > /dev/null 2>&1 & 
+/home/ddospanic/softRestart/docker_sr.sh > /dev/null 2>&1 &`,
+            (err, stream) => {
+                if (err) {
+                    console.error(`Error executing script /home/ddospanic/softRestart/docker_sr.sh: ${err}`);
+                    return;
                 }
-            );
-        }).on('error', (err) => {
-            console.error(`SSH connection error: ${err}`);
-        }).connect({
-            host: newIp,
-            port: Number(process.env.SFTP_PORT || 22),
-            username: process.env.SFTP_USER!,
-            password: process.env.SFTP_PASS!,
-        });
+
+                stream.on('close', (code: number, signal: any) => {
+                    if (code === 0) {
+                        console.log(`Successfully executed script /home/ddospanic/softRestart/docker_sr.sh`);
+                    } else {
+                        console.warn(`Script execution failed with exit code ${code}`);
+                    }
+                    sshClient.end();
+                }).on('data', (data: any) => {
+                    console.log(`stdout: ${data}`);
+                }).stderr.on('data', (data) => {
+                    console.warn(`stderr: ${data}`);
+                });
+            }
+        );
+    }).on('error', (err) => {
+        console.error(`SSH connection error: ${err}`);
+    }).connect({
+        host: String(process.env.SFTP_IP),
+        port: Number(process.env.SFTP_PORT || 22),
+        username: process.env.SFTP_USER!,
+        password: process.env.SFTP_PASS!,
     });
 };

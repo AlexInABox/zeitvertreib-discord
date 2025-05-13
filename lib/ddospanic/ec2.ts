@@ -1,5 +1,33 @@
 import { EC2Client, AllocateAddressCommand, AssociateAddressCommand, ReleaseAddressCommand, DescribeAddressesCommand } from "@aws-sdk/client-ec2";
 
+export const allocateElasticIP = async (): Promise<{ publicIp: string, allocationId: string }> => {
+    const ec2Client = new EC2Client({ region: "eu-central-1" });
+
+    // Allocate a new Elastic IP
+    const allocateResponse = await ec2Client.send(new AllocateAddressCommand({ Domain: "vpc" }));
+    if (!allocateResponse.AllocationId || !allocateResponse.PublicIp) throw new Error("Elastic IP allocation failed.");
+
+    console.log(`Elastic IP allocated: ${allocateResponse.PublicIp}`);
+
+    return {
+        publicIp: allocateResponse.PublicIp,
+        allocationId: allocateResponse.AllocationId
+    };
+};
+
+export const assignElasticIP = async (instanceId: string, privateIp: string, allocationId: string): Promise<void> => {
+    const ec2Client = new EC2Client({ region: "eu-central-1" });
+
+    // Associate the Elastic IP with the instance
+    await ec2Client.send(new AssociateAddressCommand({
+        AllocationId: allocationId,
+        InstanceId: instanceId,
+        PrivateIpAddress: privateIp,
+    }));
+
+    console.log(`Elastic IP associated with instance ${instanceId} at private IP ${privateIp}`);
+};
+
 export const allocateAndAssignElasticIP = async (instanceId: string, privateIp: string): Promise<string> => {
     const ec2Client = new EC2Client({ region: "eu-central-1" });
 
@@ -22,24 +50,19 @@ export const allocateAndAssignElasticIP = async (instanceId: string, privateIp: 
     }
 
     // Step 3: Allocate a new Elastic IP
-    const allocateResponse = await ec2Client.send(new AllocateAddressCommand({ Domain: "vpc" }));
-    if (!allocateResponse.AllocationId || !allocateResponse.PublicIp) throw new Error("Elastic IP allocation failed.");
+    const { publicIp, allocationId } = await allocateElasticIP();
 
     // Step 4: Associate the newly allocated Elastic IP with the instance
-    await ec2Client.send(new AssociateAddressCommand({
-        AllocationId: allocateResponse.AllocationId,
-        InstanceId: instanceId,
-        PrivateIpAddress: privateIp,
-    }));
+    await assignElasticIP(instanceId, privateIp, allocationId);
 
-    console.log(`Elastic IP allocated and associated: ${allocateResponse.PublicIp}`);
+    console.log(`Elastic IP allocated and associated: ${publicIp}`);
 
     // Step 5: Release the old Elastic IP if it exists
     if (oldAllocationId) {
         await releaseElasticIP(oldAllocationId);
     }
 
-    return allocateResponse.PublicIp;
+    return publicIp;
 };
 
 const releaseElasticIP = async (allocationId: string): Promise<void> => {
