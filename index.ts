@@ -398,6 +398,10 @@ BotCommands.registerCommand("ddosfix", async (interaction: ChatInputCommandInter
     return;
   }
 
+  // DISABLE COMAND FOR NOW
+  await interaction.editReply(`⏳ This command is currently disabled. Try again next week maybe...`);
+  return;
+
   const now = Date.now();
   const FIVE_MINUTES = 5 * 60 * 1000;
 
