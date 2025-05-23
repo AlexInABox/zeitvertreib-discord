@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node index.js",
-    "preprep": "node setupCommands.js"
+    "preprep": "node setupCommands.js",
+    "docker-start": "node entrypoint.js"
   },
   "repository": {
     "type": "git",

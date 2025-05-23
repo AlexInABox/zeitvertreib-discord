@@ -13,13 +13,22 @@ const COMMANDS = [
   { name: "start", description: "Start the SCP:SL server." },
   { name: "stop", description: "Stop the SCP:SL server." },
   { name: "playerlist", description: "Get a list of players on the SCP:SL server." },
-  { name: "sync", description: "Funny dev command." },
-  { name: "ddosfix", description: "Executing this command will fix **ANY** DDoS attack. Use this command only when necessary please!" }
+  { name: "sync", description: "Syncronize your CedMod stats with the Zeitvertreib stats." },
+  //{ name: "ddosfix", description: "Executing this command will fix **ANY** DDoS attack. Use this command only when necessary please!" }
 ];
 
-const TOKEN: string = process.env.DISCORD_TOKEN ?? (() => { throw new Error("DISCORD_TOKEN is not defined"); })();
-const CLIENT_ID: string = process.env.CLIENT_ID ?? (() => { throw new Error("CLIENT_ID is not defined"); })();
-const GUILD_ID: string = process.env.GUILD_ID ?? (() => { throw new Error("GUILD_ID is not defined"); })();
+// Get environment variables with fallbacks and error handling
+function getRequiredEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Required environment variable ${key} is not defined`);
+  }
+  return value;
+}
+
+const TOKEN = getRequiredEnv("DISCORD_TOKEN");
+const CLIENT_ID = getRequiredEnv("CLIENT_ID");
+const GUILD_ID = getRequiredEnv("GUILD_ID");
 
 if (!TOKEN || !CLIENT_ID || !GUILD_ID) {
   Logging.logCritical("Missing required environment variables.");
@@ -28,16 +37,10 @@ if (!TOKEN || !CLIENT_ID || !GUILD_ID) {
 
 const rest = new REST({ version: "10" }).setToken(TOKEN);
 
-(async () => {
-  try {
-    if (DELETE_BEFORE) await deleteAllCommands();
-    await registerAllCommands();
-  } catch (error) {
-    Logging.logError(`Error occurred: ${error}`);
-  }
-})();
+// Export constants that might be useful
+export { COMMANDS, TOKEN, CLIENT_ID, GUILD_ID };
 
-async function deleteAllCommands() {
+export async function deleteAllCommands() {
   try {
     await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
     Logging.logInfo("Successfully deleted all guild commands.");
@@ -49,12 +52,24 @@ async function deleteAllCommands() {
   }
 }
 
-async function registerAllCommands() {
+export async function registerAllCommands() {
   try {
     Logging.logInfo("Started refreshing application (/) commands.");
     await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: COMMANDS });
     Logging.logInfo("Successfully reloaded application (/) commands.");
   } catch (error) {
     Logging.logError("Failed to register commands: " + error);
+  }
+}
+
+// Export a main function to set up commands
+export async function setupCommands() {
+  try {
+    if (DELETE_BEFORE) await deleteAllCommands();
+    await registerAllCommands();
+    return true;
+  } catch (error) {
+    Logging.logError(`Error occurred during command setup: ${error}`);
+    return false;
   }
 }

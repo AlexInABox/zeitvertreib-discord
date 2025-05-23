@@ -377,6 +377,7 @@ BotCommands.registerCommand("stop", async (interaction: ChatInputCommandInteract
 
 let lastDdosFixTimestamp = 0; // Global timestamp
 
+/*
 BotCommands.registerCommand("ddosfix", async (interaction: ChatInputCommandInteraction) => {
   await interaction.deferReply();
 
@@ -424,3 +425,4 @@ BotCommands.registerCommand("ddosfix", async (interaction: ChatInputCommandInter
 
   Logging.logInfo("DDoS fix executed successfully.");
 });
+*/

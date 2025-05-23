@@ -6,6 +6,7 @@
   "include": [
     "./index.ts",
     "./setupCommands.ts",
+    "./entrypoint.ts",
     "./lib/**/*.ts"
   ]
 }
