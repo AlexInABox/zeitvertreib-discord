@@ -1,12 +1,13 @@
 {
   "name": "zeitvertreib-discord",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
+    "build": "npx tsc",
     "start": "node index.js",
-    "postinstall": "node setupCommands.js"
+    "preprep": "node setupCommands.js",
+    "docker-start": "node entrypoint.js"
   },
   "repository": {
     "type": "git",
@@ -19,13 +20,34 @@
   },
   "homepage": "https://github.com/AlexInABox/zeitvertreib-discord#readme",
   "dependencies": {
+    "@aws-sdk/client-ec2": "^3.803.0",
+    "@types/gifencoder": "^2.0.3",
+    "canvas": "^3.1.0",
     "chalk": "^5.4.0",
+    "cloudflare": "^4.2.0",
+    "cors": "^2.8.5",
     "discord.js": "^14.13.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-session": "^1.18.1",
     "fs": "^0.0.1-security",
     "fs-promise": "^2.0.3",
+    "gifencoder": "^2.0.1",
     "node-fetch": "^3.3.2",
-    "request": "^2.88.2"
+    "passport": "^0.7.0",
+    "passport-steam": "^1.0.18",
+    "request": "^2.88.2",
+    "ssh2-sftp-client": "^12.0.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/express-session": "^1.18.1",
+    "@types/passport": "^1.0.17",
+    "@types/passport-steam": "^1.0.6",
+    "@types/request": "^2.48.12",
+    "@types/ssh2-sftp-client": "^9.0.4",
+    "typescript": "^5.8.3"
   }
 }
