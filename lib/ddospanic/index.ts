@@ -32,7 +32,7 @@ async function ddosFixWithDiscordFeedback(editReply: (message: string) => Promis
         await replaceIPInFiles(newIp);
 
         await editReply(`Step 3: Getting old IP from Cloudflare...`);
-        const oldIp = await getOldIpFromCloudflare(process.env.CLOUDFLARE_ZONE_ID!, domain);
+        const oldIp = await getOldIpFromCloudflare(process.env.CLOUDFLARE_ZONE_ID!, "");
 
         await editReply(`Step 4: Assigning new IP to instance...`);
         await assignElasticIP(instanceId, privateIp, allocationId);
